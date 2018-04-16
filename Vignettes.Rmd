@@ -2,7 +2,9 @@
 title: "Introduction to Fused ANCOVA with 2 modalities"
 author: "Marie Perrot-Dockès, Julien Chiquet"
 date: "16 avril 2018"
-output: pdf_document
+output:
+  md_document:
+    variant: markdown_github
 ---
 
 ```{r setup, include=FALSE}
@@ -27,31 +29,31 @@ n <- 40
 p <- 10
 K <- 2
 q <- 1
-s <- 0.5
-f <- 0.5
+
 
 # B <- Simul_B(p, q, s, f, k)
 B <- c(0, 0,
        0, 0,
        0, 0,
        0, 0,
-       0, 1.4,
-       0, 1.5,
+       0, 3,
+       0, 2.5,
        0, 2,
-       1.2, 0,
+       2.2, 0,
        1.8, 0,
-       1, 1,
-       1, 1
+       2, 2,
+       2, 2
        )
 
 group <- c(rep("H", n / 2), rep("I", n / 2))
 K <- nlevels(as.factor(group))
 regressor     <- matrix(rnorm(n * p), ncol = (length(B) / K - 1))
-colnames(regressors) <- paste0('regressors', 1:p)
+
 X             <- model.matrix(~group + group:regressor - 1)
 y <- as.matrix(X %*% B + matrix(rnorm(n * q ), ncol = q))
 
 y <- scale(y)
+
 ```
 
 ## Model Selection
@@ -80,6 +82,7 @@ If we want we can add a stability selection step to keep the more stable variabl
 In order to avoid that sometimes the model select as non null value the coefficient of the whole regressor and sometimes it keep it only for one modality we perform the fusion before the stability selection and then apply the stability selection step.
 
 ```{r}
+
 stab <- stab.fl2_fixa(response = y, regressor, group, a,
                    lambda = NULL,  nrep= 100,
                    nb.cores = 3, plot = TRUE)
@@ -112,7 +115,8 @@ B_long <- c(0, 0,
        0, 0, 
        rep(0 ,8),1,1
        )
+colnames(regressor) <- paste0('regressors', 1:p)
 names(B_long) <- c(colnames(X), colnames(regressor))
 ```
  
-If we take a threshold of 0.8, meaning that we keep as non null values only the ones that are considered as non null in more than 80% of the times we have a True Positive Rate equal to `r round(sum(sel %in% names(B_long[B_long!=0])) / sum(as.numeric(B_long)!=0))` and a False Positive Rate equal to `r round(sum(sel %in% names(B_long[B_long==0])) / sum(as.numeric(B_long)==0))`.
+If we take a threshold of 0.8, we have a True Positive Rate equal to `r round(sum(sel %in% names(B_long[B_long!=0])) / sum(as.numeric(B_long)!=0),2)` and a False Positive Rate equal to `r round(sum(sel[-c(1,2)] %in% names(B_long[B_long==0])) / sum(as.numeric(B_long)==0),2)`.

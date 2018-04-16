@@ -30,7 +30,7 @@ stab.fl2_fixa <- function(response, regressors, group, a,
                    intercept = F, lambda = lambda)
   X3<- X2[,coef(mod, s='lambda.1se')[-1]!=0]
   q <- max(5, min(2 * round(nrow(X3)/log(ncol(X3))/10)*10, ncol(X3)))
-  mod <- stabsel(X2, y, q=q, PFER=1, B = nrep,
+  mod <- stabsel(X3, y, q=q, PFER=1, B = nrep,
                  fitfun = glmnet.lasso,
                  args.fitfun = list(standardize=FALSE), mc.cores = nb.cores, mc.preschedule = TRUE)
 
