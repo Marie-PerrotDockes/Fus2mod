@@ -28,7 +28,7 @@ stab.fl2_fixa <- function(response, regressors, group, a,
   mod <- cv.glmnet(x = X2, y = response,  standardize = FALSE,
                    penalty.factor = c(0, 0, rep(b, (ncol(X) - 2)), rep(a, ncol(regressors))),
                    intercept = F, lambda = lambda)
-  X3<- X2[,coef(mod, s='lambda.1se')[-1]!=0]
+  X3<- X2[,coef(mod, s='lambda.min')[-1]!=0]
   q <- max(5, min(2 * round(nrow(X3)/log(ncol(X3))/10)*10, ncol(X3) -1 ))
   mod <- stabsel(X3, y, q=q, PFER=1, B = nrep,
                  fitfun = glmnet.lasso,
