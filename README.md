@@ -5,7 +5,7 @@ Install and load the package
 devtools::install_github("Marie-PerrotDockes/Fus2mod")
 ```
 
-    ## Skipping install of 'Fus2mod' from a github remote, the SHA1 (795fe126) has not changed since last install.
+    ## Skipping install of 'Fus2mod' from a github remote, the SHA1 (518728ca) has not changed since last install.
     ##   Use `force = TRUE` to force installation
 
 ``` r
@@ -90,7 +90,7 @@ We first propose a Cross-validation step. For different values of *a* we will ap
                    nb.cores = 3, plot = TRUE)
 ```
 
-![](Vignettes_files/figure-markdown_github/unnamed-chunk-3-1.png)
+![](README_files/figure-markdown_github/unnamed-chunk-3-1.png)
 
 By watching this plot we propose to take the *a* that minimise the degree of freedom because it is the lower (or really close to ) the lower error of prediction.
 
@@ -104,7 +104,7 @@ a
     ## # Groups:   a [1]
     ##       a
     ##   <dbl>
-    ## 1  1.05
+    ## 1  1.52
 
 If we want we can add a stability selection step to keep the more stable variable. In order to avoid that sometimes the model select as non null value the coefficient of the whole regressors and sometimes it keep it only for one modality we perform the fusion before the stability selection and then apply the stability selection step.
 
@@ -127,32 +127,32 @@ stab
     ##  Stability Selection with unimodality assumption
     ## 
     ## Selected variables:
-    ##             groupH             groupI groupI:regressors4 
-    ##                  1                  2                  7 
-    ##        regressors9 
-    ##                 18 
+    ## groupH groupI 
+    ##      1      2 
     ## 
     ## Selection probabilities:
-    ## groupI:regressors8 groupI:regressors7 groupI:regressors3 
-    ##             0.2285             0.2330             0.2390 
-    ## groupI:regressors2 groupH:regressors3 groupH:regressors2 
-    ##             0.2565             0.2900             0.3035 
-    ## groupH:regressors5        regressors1 groupH:regressors6 
-    ##             0.3170             0.5660             0.5960 
-    ##        regressors4 groupH:regressors8 groupH:regressors7 
-    ##             0.6375             0.8460             0.9260 
-    ## groupI:regressors6       regressors10 groupI:regressors5 
-    ##             0.9275             0.9560             0.9575 
-    ## groupI:regressors4        regressors9             groupH 
-    ##             0.9870             0.9955             1.0000 
-    ##             groupI 
-    ##             1.0000 
+    ##  groupH:regressors2  groupH:regressors5  groupH:regressors4 
+    ##              0.3090              0.3120              0.3440 
+    ##  groupI:regressors8  groupH:regressors6  groupH:regressors9 
+    ##              0.3505              0.3805              0.3945 
+    ##  groupH:regressors3 groupH:regressors10  groupI:regressors1 
+    ##              0.4040              0.4795              0.4885 
+    ##  groupH:regressors7  groupI:regressors3  groupI:regressors2 
+    ##              0.4930              0.5030              0.6440 
+    ##  groupH:regressors1         regressors7  groupI:regressors4 
+    ##              0.6635              0.8275              0.8775 
+    ##        regressors10  groupH:regressors8  groupI:regressors5 
+    ##              0.9075              0.9095              0.9165 
+    ##  groupI:regressors6         regressors9              groupH 
+    ##              0.9630              0.9650              1.0000 
+    ##              groupI 
+    ##              1.0000 
     ## 
     ## ---
-    ## Cutoff: 0.9765; q: 14; PFER (*):  0.989 
+    ## Cutoff: 0.9815; q: 17; PFER (*):  0.997 
     ##    (*) or expected number of low selection probability variables
     ## PFER (specified upper bound):  1 
-    ## PFER corresponds to signif. level 0.0521 (without multiplicity adjustment)
+    ## PFER corresponds to signif. level 0.0453 (without multiplicity adjustment)
 
 ``` r
 par(mf.row=c(1,2))
@@ -164,13 +164,13 @@ par(mf.row=c(1,2))
 plot(stab, type="maxsel", main="Maximum selection frequencies")
 ```
 
-![](Vignettes_files/figure-markdown_github/unnamed-chunk-6-1.png)
+![](README_files/figure-markdown_github/unnamed-chunk-6-1.png)
 
 ``` r
 plot(stab, type="path", main="Stability paths")
 ```
 
-![](Vignettes_files/figure-markdown_github/unnamed-chunk-6-2.png)
+![](README_files/figure-markdown_github/unnamed-chunk-6-2.png)
 
 ``` r
 sel <-names(stabsel(stab, cutoff=0.8)$selected)[-c(1,2)]
@@ -178,7 +178,7 @@ sel
 ```
 
     ## [1] "groupI:regressors4" "groupI:regressors5" "groupI:regressors6"
-    ## [4] "groupH:regressors7" "groupH:regressors8" "regressors9"       
+    ## [4] "groupH:regressors8" "regressors7"        "regressors9"       
     ## [7] "regressors10"
 
 ``` r
@@ -206,4 +206,4 @@ names(B_long[B_long != 0])
     ## [4] "groupH:regressors7" "groupH:regressors8" "regressors9"       
     ## [7] "regressors10"
 
-If we take a threshold of 0.8, we have a True Positive Rate equal to 1 and a False Positive Rate equal to 0.
+If we take a threshold of 0.8, we have a True Positive Rate equal to 0.86 and a False Positive Rate equal to 0.04.
