@@ -58,8 +58,8 @@ y <- scale(y)
 
 ## Model Selection
 
-Here we foccus on the model $Y=XB+E$, where $Y$, $B$ and $E$ are vector and $X$ is a one-way ANCOVA design matrix. We have two objectifs : we want to find which collumns of $X$ can explain the response $y$ in the first hand. In the second hand we want to observe if the differents modalities influence the values of the coefficient of the regressors on the response, in other terms if the collumn group1:regressorsi will have the same coefficient than the collum group2:regressorsi. 
-To do that we propose to apply a lasso criterion to the model : $Y=X_2B+E$ where $X2$ is the concatenation of $X$ and the matrix of the regressors. To be abble to arrange the level of fusion we propose to put weight on the penalties a weight $b$ if the coefficients is the coefficient of a couple regressors modalities and a weight $a$ if the coefficients is the coefficients of a whole regressors. Like $2pb+pa$ must be equal to $3p+2$ fixing $a$ will give us a value of $b$. Thus, the more $a$ is small the more the model will encourage the coefficient of two different modalities for the same regressors to be the same. 
+Here we foccus on the model $Y=XB+E$, where $Y$, $B$ and $E$ are vectors and $X$ is a one-way ANCOVA design matrix. We have two objectifs : we want to find which collumns of $X$ can explain the response $y$ in the first hand. In the second hand we want to observe if the differents modalities influence the values of the coefficient of the regressor on the response, in other terms if the collumn group1:regressorsi will have the same coefficient than the collum group2:regressorsi. 
+To do that we propose to apply a lasso criterion to the model : $Y=X_2B+E$ where $X_2$ is the concatenation of $X$ and the matrix of the regressors. To be abble to arrange the level of fusion we propose to put weight on the penalties a weight $b$ if the coefficients is the coefficient of a couple regressors modalities and a weight $a$ if the coefficients is the coefficients of a whole regressors. Like $2pb+pa$ must be equal to $3p+2$ fixing $a$ will give us a value of $b$. Thus, the more $a$ is small the more the model will encourage the coefficient of two different modalities for the same regressors to be the same. 
 For more detail about this model we confer the reader to the file "2_modalities.pdf".
 
 We first propose a Cross-validation step. For different values of $a$  we will apply a 5-fold CV on our data and keep the minimal error (cvm)and the degree of freedom (ddl) that match this minimal error. We will do that $nrep =10$ times  for each value of $a$ the mean on this 10 replicats  are display bellow.
@@ -79,10 +79,9 @@ a
 ```
 
 If we want we can add a stability selection step to keep the more stable variable. 
-In order to avoid that sometimes the model select as non null value the coefficient of the whole regressors and sometimes it keep it only for one modality we perform the fusion before the stability selection and then apply the stability selection step.
+We will perform the Fusion before the stability selection.
 
 ```{r}
-source('~/Documents/Multivar_selec/Multivar_selec/FusedLasso/Fus2mod/R/stab.fl2_fixa.R', echo=TRUE)
 stab <- stab.fl2_fixa(response = y, regressors, group, a,
                    lambda = NULL,  nrep= 1000,
                    nb.cores = 3, plot = TRUE)

@@ -5,8 +5,18 @@ Install and load the package
 devtools::install_github("Marie-PerrotDockes/Fus2mod")
 ```
 
-    ## Skipping install of 'Fus2mod' from a github remote, the SHA1 (518728ca) has not changed since last install.
-    ##   Use `force = TRUE` to force installation
+    ## Downloading GitHub repo Marie-PerrotDockes/Fus2mod@master
+    ## from URL https://api.github.com/repos/Marie-PerrotDockes/Fus2mod/zipball/master
+
+    ## Installing Fus2mod
+
+    ## '/usr/lib/R/bin/R' --no-site-file --no-environ --no-save --no-restore  \
+    ##   --quiet CMD INSTALL  \
+    ##   '/tmp/RtmpAzRAn9/devtools12aa5107a63f/Marie-PerrotDockes-Fus2mod-0b60b6f'  \
+    ##   --library='/home/perrot-dockes/R/x86_64-pc-linux-gnu-library/3.4'  \
+    ##   --install-tests
+
+    ## 
 
 ``` r
 require(Fus2mod)
@@ -81,7 +91,7 @@ y <- scale(y)
 Model Selection
 ---------------
 
-Here we foccus on the model *Y* = *X**B* + *E*, where *Y*, *B* and *E* are vector and *X* is a one-way ANCOVA design matrix. We have two objectifs : we want to find which collumns of *X* can explain the response *y* in the first hand. In the second hand we want to observe if the differents modalities influence the values of the coefficient of the regressors on the response, in other terms if the collumn group1:regressorsi will have the same coefficient than the collum group2:regressorsi. To do that we propose to apply a lasso criterion to the model : *Y* = *X*<sub>2</sub>*B* + *E* where *X*2 is the concatenation of *X* and the matrix of the regressors. To be abble to arrange the level of fusion we propose to put weight on the penalties a weight *b* if the coefficients is the coefficient of a couple regressors modalities and a weight *a* if the coefficients is the coefficients of a whole regressors. Like 2*p**b* + *p**a* must be equal to 3*p* + 2 fixing *a* will give us a value of *b*. Thus, the more *a* is small the more the model will encourage the coefficient of two different modalities for the same regressors to be the same. For more detail about this model we confer the reader to the file "2\_modalities.pdf".
+Here we foccus on the model *Y* = *X**B* + *E*, where *Y*, *B* and *E* are vectors and *X* is a one-way ANCOVA design matrix. We have two objectifs : we want to find which collumns of *X* can explain the response *y* in the first hand. In the second hand we want to observe if the differents modalities influence the values of the coefficient of the regressor on the response, in other terms if the collumn group1:regressorsi will have the same coefficient than the collum group2:regressorsi. To do that we propose to apply a lasso criterion to the model : *Y* = *X*<sub>2</sub>*B* + *E* where *X*<sub>2</sub> is the concatenation of *X* and the matrix of the regressors. To be abble to arrange the level of fusion we propose to put weight on the penalties a weight *b* if the coefficients is the coefficient of a couple regressors modalities and a weight *a* if the coefficients is the coefficients of a whole regressors. Like 2*p**b* + *p**a* must be equal to 3*p* + 2 fixing *a* will give us a value of *b*. Thus, the more *a* is small the more the model will encourage the coefficient of two different modalities for the same regressors to be the same. For more detail about this model we confer the reader to the file "2\_modalities.pdf".
 
 We first propose a Cross-validation step. For different values of *a* we will apply a 5-fold CV on our data and keep the minimal error (cvm)and the degree of freedom (ddl) that match this minimal error. We will do that *n**r**e**p* = 10 times for each value of *a* the mean on this 10 replicats are display bellow.
 
@@ -104,18 +114,9 @@ a
     ## # Groups:   a [1]
     ##       a
     ##   <dbl>
-    ## 1  1.52
+    ## 1  1.20
 
-If we want we can add a stability selection step to keep the more stable variable. In order to avoid that sometimes the model select as non null value the coefficient of the whole regressors and sometimes it keep it only for one modality we perform the fusion before the stability selection and then apply the stability selection step.
-
-``` r
-source('~/Documents/Multivar_selec/Multivar_selec/FusedLasso/Fus2mod/R/stab.fl2_fixa.R', echo=TRUE)
-```
-
-    ## 
-    ## > stab.fl2_fixa <- function(response, regressors, group, 
-    ## +     a, lambda = NULL, nrep = 1000, nb.cores = 3, plot = TRUE) {
-    ## +     p <- ncol(regressors .... [TRUNCATED]
+If we want we can add a stability selection step to keep the more stable variable. We will perform the Fusion before the stability selection.
 
 ``` r
 stab <- stab.fl2_fixa(response = y, regressors, group, a,
@@ -127,32 +128,32 @@ stab
     ##  Stability Selection with unimodality assumption
     ## 
     ## Selected variables:
-    ## groupH groupI 
-    ##      1      2 
+    ##             groupH             groupI groupI:regressors4 
+    ##                  1                  2                  7 
+    ## groupH:regressors8        regressors9 
+    ##                 13                 20 
     ## 
     ## Selection probabilities:
-    ##  groupH:regressors2  groupH:regressors5  groupH:regressors4 
-    ##              0.3090              0.3120              0.3440 
-    ##  groupI:regressors8  groupH:regressors6  groupH:regressors9 
-    ##              0.3505              0.3805              0.3945 
-    ##  groupH:regressors3 groupH:regressors10  groupI:regressors1 
-    ##              0.4040              0.4795              0.4885 
-    ##  groupH:regressors7  groupI:regressors3  groupI:regressors2 
-    ##              0.4930              0.5030              0.6440 
-    ##  groupH:regressors1         regressors7  groupI:regressors4 
-    ##              0.6635              0.8275              0.8775 
-    ##        regressors10  groupH:regressors8  groupI:regressors5 
-    ##              0.9075              0.9095              0.9165 
-    ##  groupI:regressors6         regressors9              groupH 
-    ##              0.9630              0.9650              1.0000 
-    ##              groupI 
-    ##              1.0000 
+    ##  groupI:regressors2  groupH:regressors5  groupH:regressors2 
+    ##              0.1840              0.1930              0.2880 
+    ##  groupI:regressors3  groupH:regressors3  groupI:regressors7 
+    ##              0.3830              0.4060              0.4145 
+    ##  groupI:regressors8         regressors1  groupH:regressors9 
+    ##              0.4350              0.4945              0.4975 
+    ## groupI:regressors10  groupI:regressors5  groupI:regressors6 
+    ##              0.5425              0.6145              0.6930 
+    ##         regressors6         regressors4        regressors10 
+    ##              0.7060              0.7290              0.8970 
+    ##  groupH:regressors7  groupH:regressors8         regressors9 
+    ##              0.9270              0.9805              0.9810 
+    ##  groupI:regressors4              groupH              groupI 
+    ##              0.9875              1.0000              1.0000 
     ## 
     ## ---
-    ## Cutoff: 0.9815; q: 17; PFER (*):  0.997 
+    ## Cutoff: 0.98; q: 16; PFER (*):  0.999 
     ##    (*) or expected number of low selection probability variables
     ## PFER (specified upper bound):  1 
-    ## PFER corresponds to signif. level 0.0453 (without multiplicity adjustment)
+    ## PFER corresponds to signif. level 0.0476 (without multiplicity adjustment)
 
 ``` r
 par(mf.row=c(1,2))
@@ -177,9 +178,8 @@ sel <-names(stabsel(stab, cutoff=0.8)$selected)[-c(1,2)]
 sel 
 ```
 
-    ## [1] "groupI:regressors4" "groupI:regressors5" "groupI:regressors6"
-    ## [4] "groupH:regressors8" "regressors7"        "regressors9"       
-    ## [7] "regressors10"
+    ## [1] "groupI:regressors4" "groupH:regressors7" "groupH:regressors8"
+    ## [4] "regressors9"        "regressors10"
 
 ``` r
 names(B) <- colnames(X)
@@ -206,4 +206,4 @@ names(B_long[B_long != 0])
     ## [4] "groupH:regressors7" "groupH:regressors8" "regressors9"       
     ## [7] "regressors10"
 
-If we take a threshold of 0.8, we have a True Positive Rate equal to 0.86 and a False Positive Rate equal to 0.04.
+If we take a threshold of 0.8, we have a True Positive Rate equal to 0.71 and a False Positive Rate equal to 0.
