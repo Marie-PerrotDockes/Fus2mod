@@ -112,7 +112,7 @@ B_long <- c(0, 0,
        1.8, 0,
        0, 0,
        0, 0, 
-       rep(0 ,8),1,1
+       rep(0 ,8), 1, 1
        )
 colnames(regressors) <- paste0('regressors', 1:p)
 names(B_long) <- c(colnames(X), colnames(regressors))

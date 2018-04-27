@@ -1,0 +1,40 @@
+---
+title: "Group Fused Lasso"
+author: ""
+date: "24 avril 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## First exemple 
+
+We have $p = 20$ "locus" each of them have four segregation (of parents allele) types (AC, AD, BC, BD). We have have two conditions (I and NI).
+We want to explain a phenotype trait $y$. 
+The idea is to classified the  locus into three clusters :
+  * **A** the ones that are not used to explain the locus 
+  * **B** the ones that are used to explain the   in the same way for the two conditions (one way per types)
+  * **C** the ones that explain the locus differently for the two conditions (one way per couple types*conditions)
+  
+To perform this classification we propose to study the  model $y = Xb + E$, where $X$ is a $20 * 4 * 2 + 20*4 = 240$ columns matrix .   
+Let us call $V = X^{1(I)}_{AC}$ the $j^{th}$ elements of $V$ is equal to the value of the first locus if the $j^{th}$ sample belong to the type $AC$ and the condition $I$ and 0 otherwise.
+More general let us call $X^{k(C)}_{T}$, the columns of $X$ such that the $j^{th}$ elements of this column is equal to the value of the $k^{th}$ locus if the $j^{th}$ sample belong to the type $T$ and the condition $C$ and 0 otherwise.  Let $b^{k(C)}_{T}$ be the value of $b$ associated to this columns.
+This defined the first 160 columns of $X$. The last $20*4$ are  the vectors $X^{k(.)}_{T}$, such that the $j^{th}$ elements of this column is equal to the value of the $k^{th}$ locus if the $j^{th}$ sample belong to the type $T$ and the condition $C$ and 0 otherwise. Let $b^{k(.)}_{T}$ be the value of $b$ associated to this columns. Let us notice that $X^{k(.)}_{T} =X^{k(I)}_{T} +X^{k(NI)}_{T}$. 
+
+
+The three clusters described above can then be described as follows :
+  * **A** the coefficients $b^{k(.)}_{T}$ and $b^{k(C)}_{T}$ are null for all $T \in $ (AC, AD, BC, BD).
+  * **B** the coefficients $b^{k(.)}_{T}$ are different from 0 and the coefficients $b^{k(C)}_{T}$ are null for all $T \in $ (AC, AD, BC, BD).
+  * **C** the coefficients $b^{k(.)}_{T}$ are null and the coefficients $b^{k(C)}_{T}$ are different from 0 for all $T \in $ (AC, AD, BC, BD).
+
+
+
+To select the variable $X^{k(.)}_{T}$ when the two conditions have similar coefficients for the locus $k$ on the type $T$ we will put different penalty on  the coefficients $b^{k(C)}_{T}$ and on the coefficients $b^{k(.)}_{T}$. 
+
+
+
+To classified our locus  we propose to resolve the following problem : 
+
+$ \widehat{b}_{\lambda,a,b}=\textrm{Argmin}_b\left\{\|y - Xb\|_2^2 + \lambda \sum_{i=1}^p(  ) \right\}$ 
