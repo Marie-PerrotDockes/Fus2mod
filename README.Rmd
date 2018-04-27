@@ -21,8 +21,9 @@ require(Fus2mod)
 
 ## Dataset Simulation
 
-We start by generate a toy exemple, where we have two modalities H and I, 10 regressors and 30 individuals. For now we only have one response. 
-We generate our dataset such that the 3 first regressors have no effect on the response , then the regressors 4, 5 and 6 have an effect on the response onl y on the sample that comes from the modality I and the regressors 7 and 8 have an effect on the response for the modality N but not for the modlity I.
+We start by generating a toy example, where we have K=2 modalities (H and I), p=10 regressors and 20 individuals, thus we have n=40 observations in the end.
+For now we only have q=1 response.
+We generate our dataset such that the 3 first regressors have no effect on the response, then the regressors 4, 5 and 6 have an effect on the response only on the sample that comes from the modality I, the regressors 7 and 8 have an effect on the response for the modality H but not for the modality I, and regressors 9 and 10 have an effect on both modalities.
 
 ```{r}
 n <- 40
@@ -30,9 +31,8 @@ p <- 10
 K <- 2
 q <- 1
 
-
 # B <- Simul_B(p, q, s, f, k)
-B <- c(0, 0,
+B <- c(0, 0, # intercept
        0, 0,
        0, 0,
        0, 0,
@@ -47,13 +47,10 @@ B <- c(0, 0,
 
 group <- c(rep("H", n / 2), rep("I", n / 2))
 K <- nlevels(as.factor(group))
-regressors     <- matrix(rnorm(n * p), ncol = (length(B) / K - 1))
-
-X             <- model.matrix(~group + group:regressors - 1)
-y <- as.matrix(X %*% B + matrix(rnorm(n * q ), ncol = q))
-
+regressors <- matrix(rnorm(n * p), ncol = (length(B) / K - 1))
+X          <- model.matrix(~group + group:regressors - 1)
+y <- as.matrix(X %*% B + matrix(rnorm(n * q), ncol = q))
 y <- scale(y)
-
 ```
 
 ## Model Selection
