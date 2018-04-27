@@ -39,3 +39,11 @@ The three type of cluster select or fused the two conditions for the 4 different
 Hence  we propose to resolve the following problem : 
 
 $ \widehat{b}_{\lambda,a,b}=\textrm{Argmin}_b\left\{\|y - Xb\|_2^2 + \lambda \sum_{i=1}^p(\alpha\|b^{k(.)}\|_2 + \beta\|b^{k(I)}\|_2 + \beta\|b^{k(NI)}\|_2 ) \right\}$ 
+
+```{r}
+p <- 20
+t <- c("AC","AD","BC","BD")
+C <- c("I","NI")
+
+```
+
