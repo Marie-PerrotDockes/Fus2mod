@@ -7,6 +7,9 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+require(stringr)
+require(gglasso)
+require(tidyverse)
 ```
 
 ## First exemple 
@@ -18,10 +21,11 @@ The idea is to classified the  locus into three clusters :
   * **B** the ones that are used to explain the   in the same way for the two conditions (one way per types)
   * **C** the ones that explain the locus differently for the two conditions (one way per couple types*conditions)
   
-To perform this classification we propose to study the  model $y = Xb + E$, where $X$ is a $20 * 4 * 2 + 20*4 = 240$ columns matrix .   
-Let us call $V = X^{1(I)}_{AC}$ the $j^{th}$ elements of $V$ is equal to the value of the first locus if the $j^{th}$ sample belong to the type $AC$ and the condition $I$ and 0 otherwise.
-More general let us call $X^{k(C)}_{T}$, the columns of $X$ such that the $j^{th}$ elements of this column is equal to the value of the $k^{th}$ locus if the $j^{th}$ sample belong to the type $T$ and the condition $C$ and 0 otherwise.  Let $b^{k(C)}_{T}$ be the value of $b$ associated to this columns.
-This defined the first 160 columns of $X$. The last $20*4$ are  the vectors $X^{k(.)}_{T}$, such that the $j^{th}$ elements of this column is equal to the value of the $k^{th}$ locus if the $j^{th}$ sample belong to the type $T$ and the condition $C$ and 0 otherwise. Let $b^{k(.)}_{T}$ be the value of $b$ associated to this columns. Let us notice that $X^{k(.)}_{T} =X^{k(I)}_{T} +X^{k(NI)}_{T}$. To simplify the notation we will  introduce the vectors  $b^{k(.)} =(b^{k(.)}_{AC},b^{k(.)}_{AD},b^{k(.)}_{BC},b^{k(.)}_{BD})$, $b^{k(I)} =(b^{k(I)}_{AC},b^{k(I)}_{AD},b^{k(I)}_{BC},b^{k(I)}_{BD})$, $b^{k(NI)} =(b^{k(NI)}_{AC},b^{k(NI)}_{AD},b^{k(NI)}_{BC},b^{k(NI)}_{BD})$.
+To perform this classification we propose to study the  model $y = Xb + E$, where $X$ is a $20 * 4 * 2 + 20*4 + 2 = 242$ columns matrix .   
+The first two columns of $X$ are the vectors $X^{(I)}$ and $X^{(NI)}$, the $j^{th}$ elements of this vectors is equal to one if the sample $j$ belongs to the conditions I , for the first one and respectively NI for the second one, the value $b^{(I)}$ and $b^{(NI)}$ link to this vector will always be considered as non null.
+Let us call $V = X^{1(I)}_{AC}$, the $j^{th}$ elements of $V$ is equal to the value of the first locus for the type AC if the $j^{th}$ sample belong to the condition $I$ and 0 otherwise.
+More general let us call $X^{k(C)}_{T}$, the columns of $X$ such that the $j^{th}$ elements of this column is equal to the value of the $k^{th}$ locus for the type T if the $j^{th}$ sample belongs to  the condition $C$ and 0 otherwise.  Let $b^{k(C)}_{T}$ be the value of $b$ associated to this columns.
+This defined the first 160 columns of $X$. The last $20*4$ are  the vectors $X^{k(.)}_{T}$ equal to the value of the $k^{th}$ locus for the type $T$. Let $b^{k(.)}_{T}$ be the value of $b$ associated to this columns. Let us notice that $X^{k(.)}_{T} =X^{k(I)}_{T} +X^{k(NI)}_{T}$. To simplify the notation we will  introduce the vectors  $b^{k(.)} =(b^{k(.)}_{AC},b^{k(.)}_{AD},b^{k(.)}_{BC},b^{k(.)}_{BD})$, $b^{k(I)} =(b^{k(I)}_{AC},b^{k(I)}_{AD},b^{k(I)}_{BC},b^{k(I)}_{BD})$, $b^{k(NI)} =(b^{k(NI)}_{AC},b^{k(NI)}_{AD},b^{k(NI)}_{BC},b^{k(NI)}_{BD})$.
 
 
 The three clusters described above can then be described as follows :
@@ -33,17 +37,109 @@ The three clusters described above can then be described as follows :
       + the coefficients $b^{k(.)}$ are different from zero and the coefficients  and the coefficients $b^{k(C)}$ are different from 0 for $C$ equal to I or NI (but not both).
 
 
-The three type of cluster select or fused the two conditions for the 4 differents types of a same locus $k$ simultaneously. Hence we propose to perform group Lasso, group on the loccus. Moreover to select the variables $X^{k(.)}_{AC},X^{k(.)}_{AD},X^{k(.)}_{BC},X^{k(.)}_{BD}$  instead of $X^{k(I)}_{AC},X^{k(I)}_{AD},X^{k(I)}_{BC},X^{k(I)}_{BD} $ and $X^{k(NI)}_{AC},X^{k(NI)}_{AD},X^{k(NI)}_{BC},X^{k(NI)}_{BD} $  for the locus $k$  when the two conditions have similar coefficients we will put differents penalties on  the coefficients $b^{k(C)}$ and on the coefficients $b^{k(.)}$. 
+The three type of cluster select or fused the two conditions for the 4 different types of a same locus $k$ simultaneously. Hence we propose to perform group Lasso, group on the locus. Moreover to select the variables $X^{k(.)}_{AC},X^{k(.)}_{AD},X^{k(.)}_{BC},X^{k(.)}_{BD}$  instead of $X^{k(I)}_{AC},X^{k(I)}_{AD},X^{k(I)}_{BC},X^{k(I)}_{BD} $ and $X^{k(NI)}_{AC},X^{k(NI)}_{AD},X^{k(NI)}_{BC},X^{k(NI)}_{BD} $  for the locus $k$  when the two conditions have similar coefficients we will put different penalties on  the coefficients $b^{k(C)}$ and on the coefficients $b^{k(.)}$. 
 
 
 Hence  we propose to resolve the following problem : 
 
 $ \widehat{b}_{\lambda,a,b}=\textrm{Argmin}_b\left\{\|y - Xb\|_2^2 + \lambda \sum_{i=1}^p(\alpha\|b^{k(.)}\|_2 + \beta\|b^{k(I)}\|_2 + \beta\|b^{k(NI)}\|_2 ) \right\}$ 
 
-```{r}
-p <- 20
-t <- c("AC","AD","BC","BD")
-C <- c("I","NI")
 
+### Dataset simulation
+
+```{r}
+n               <- 40
+p               <- 20
+t               <- rep(c("AC","AD","BC","BD"))
+loc             <- paste0("loc", 1:20)
+Loc_T           <- matrix(rnorm(n * p * 4), ncol = p * 4)
+colnames(Loc_T) <- paste(rep(loc, each = 4), rep (t, 20), sep=":")
+C               <- as.factor(sample(rep(c("I","NI") , round(n / 2)), n))
+X               <- model.matrix(~C + Loc_T:C -1)
+X               <- cbind(X, Loc_T)
 ```
+Here  col are the locus names, t are the different parent allele types, and C the different conditions for the samples.
+
+Let's now simulate the coefficients $b$. For our simulation we will say that we have 3 locus that have the same coefficients no matter the conditions $C$, meaning $b^{k(NI)}=b^{k(I)}$, in practice we will have $b^{k(NI)}=b^{k(I)}=0$ and $b^{k(.)}\neq 0$ , 3 locus for which the coefficients $b^{k(NI)}$ are non null for the four types and $b^{k(I)}$ has only null values and 3 locus for which the the coefficients $b^{k(I)}$ are non null for the four types and $b^{k(NI)}$ has only null values. The 11 other locus have only null coefficients.
+
+```{r}
+b <- rep(0, (ncol(X) )) 
+names(b) <- colnames(X)
+G1 <- c(1, 2)
+G2 <- c(3, 4)
+G3 <- c(5, 6)
+sapply(c(G1, G2, G3), function(i){
+  val <- sample(1:4, 4)
+  if(i %in% G3)  b[grepl(paste0("loc", i,":"), names(b)) & grepl("CI", names(b))]  <<- val 
+  if(i %in% G2)  b[grepl(paste0("loc", i,":"), names(b)) & grepl("CNI", names(b))] <<- val
+  if(i %in% G1){
+    b[grepl(paste0("loc", i,":"), names(b)) & !(grepl("CI", names(b)) | grepl("CNI", names(b)))]  <<- val 
+  }
+})
+b[1:2] <- c(1, 2)
+b
+```
+
+```{r}
+y <- X %*% b + rnorm(n)
+```
+
+
+```{r}
+gfl2 <- group_fl2(response = y, regressors = Loc_T, group = NULL, group_by = paste0(loc,":") , modal = C, seq.a = NULL,
+                      lambda = NULL, mina = 0.1, nfold = 5, nrep= 10,
+                      nb.cores = 3, plot = TRUE, a =1)
+
+b_hat <- gfl2$mod$beta
+b_hat
+```
+
+Lets draw the ROC curve
+
+```{r}
+b <- b[gfl2$ord]
+TP_FP <- function(x){
+  # x <- x[seq(3, length(x), 4)]
+  # b <- b[seq(3, length(b), 4)]
+  TP  <- sum( x != 0 & b != 0)
+  FP  <- sum( x != 0 & b == 0)
+  TN  <- sum( x == 0 & b == 0)
+  FN  <- sum( x == 0 & b != 0)
+  TPR <- TP / (TP + FN)
+  FPR <- FP / (FP + TN)
+  return(c(TPR, FPR))
+}
+
+Roc <- t( apply(b_hat, 2, TP_FP) )
+colnames(Roc) <- c("TPR", "FPR")
+Roc <- as.data.frame(Roc)
+
+plt <- ggplot (data = Roc, aes(x = FPR, y = TPR)) + geom_line() + geom_point() + theme_bw()
+plt
+```
+
+Let's draw the regularization path. In order to be more interpretable we will draw the coefficients 
+$b_{tot}^{k(I)}= b^{k(I)} + b^{k(.)}$ and $b_{tot}^{k(NI)}= b^{k(NI)} + b^{k(.)}$
+
+```{r}
+B_hat <- b_hat[1:(4 * 2 * p + 2), ]
+B_hat[-c(1,2),] <- B_hat[-c(1,2), ] + b_hat[rep((4 * 2 * p + 2 + 1) : (4 * 2 * p + 2 + 4 * p),each = 2), ]
+b_tot <- b[1:(4 * 2 * p + 2)]
+b_tot[ - c(1, 2)] <- b_tot[ - c(1, 2)] + b[rep((4 * 2 * p + 2 + 1) : (4 * 2 * p + 2 + 4 * p),each = 2)]
+Path <- B_hat %>% 
+         as.data.frame()      %>%
+         rownames_to_column() %>% 
+         mutate( Real = b_tot)    %>% 
+         gather( -Real, -rowname , key = "Path", value = "Coefficients", factor_key = TRUE) %>% 
+         mutate( Path = as.numeric (Path), Type = ifelse(grepl(paste(paste0("loc", G3, ":"), collapse = "|"), rowname),
+                                                           "G3", 
+                                                            ifelse(grepl(paste(paste0("loc", G2, ":"), collapse = "|"), rowname), "G2", 
+                                                          ifelse(grepl(paste(paste0("loc", G1, ":"), collapse = "|"), rowname), "G1", "G4"))))
+
+plt <- ggplot(data = Path, aes(x = Path, y = Coefficients, color = as.character(Type), group = rowname)) +
+         geom_line()
+plt
+dim(B_hat)
+```
+
 
