@@ -86,6 +86,12 @@ y <- X %*% b + rnorm(n)
 
 
 ```{r}
+
+mods <- fus_grp(response = y, regressors = Loc_T, grp =NULL, group_by = paste0(loc,":"), uniq_modal = NULL, modal = C, seq.a = NULL,
+                                 lambda = NULL, mina = 0.1, nfold = 5, nrep= 10,
+                                 nb.cores = 3, plot = TRUE, a = 1, nlambda = 100)
+
+Mod <- mods[[1]]
 gfl2 <- group_fl2(response = y, regressors = Loc_T, group = NULL, group_by = paste0(loc,":") , modal = C, seq.a = NULL,
                       lambda = NULL, mina = 0.1, nfold = 5, nrep= 10,
                       nb.cores = 3, plot = TRUE, a =1)
@@ -98,7 +104,7 @@ Lets draw the ROC curve
 
 ```{r}
 b <- b[gfl2$ord]
-TP_FP <- function(x){
+TP_FP <- function(x, b){
   # x <- x[seq(3, length(x), 4)]
   # b <- b[seq(3, length(b), 4)]
   TP  <- sum( x != 0 & b != 0)
@@ -107,10 +113,19 @@ TP_FP <- function(x){
   FN  <- sum( x == 0 & b != 0)
   TPR <- TP / (TP + FN)
   FPR <- FP / (FP + TN)
+  TPFP <- c(TPR, FPR)
+  names(TPFP) <- c("TPR", "FPR")
   return(c(TPR, FPR))
 }
 
-Roc <- t( apply(b_hat, 2, TP_FP) )
+Mod$ROC <- lapply(mods[[1]]$Coefficients, function(b_hat){ A <- t( apply(b_hat, 2, TP_FP))
+                                                        colnames(A) <-c("TPR", "FPR")
+                                                        as.data.frame(A)})
+
+
+Roc <-select(Mod,value,ROC) %>% unnest()
+
+head(Roc)
 colnames(Roc) <- c("TPR", "FPR")
 Roc <- as.data.frame(Roc)
 
