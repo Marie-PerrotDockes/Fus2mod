@@ -185,7 +185,7 @@ gglasso_forstab <- function (x, y, group, ord, q)
 #'colors <- c(rep("grey",2), rep('green',2),rep('black', 6), rep(c("orange","blue"), 2), 'darkgreen', rep('yellow',3), rep('purple',2))
 #'matplot(mod$lambda ,t(mod$beta),type='l',col=colors)
 #' @export
-gglasso_st_tot <- function(X,Y, group = NULL, sep ="\\.", nb.cores = 7, B = 500, PFER = 1, type_group){
+gglasso_st_tot <- function(X,Y, group = NULL, sep ="\\.", nb.cores = 7, B = 500, PFER = 1, type_group, verbose = FALSE){
   if (type_group == "Trait") {
     X <- as.matrix(X)
     Y <- as.matrix(Y)
@@ -194,7 +194,7 @@ gglasso_st_tot <- function(X,Y, group = NULL, sep ="\\.", nb.cores = 7, B = 500,
                    fitfun=glmnet.multivar,
                    args.fitfun=list( family="mgaussian",
                                     standardize=FALSE),
-                   mc.cores=nb.cores, mc.preschedule=TRUE))
+                   mc.cores=nb.cores, mc.preschedule=TRUE, verbose = verbose))
   } else{
     r <- ncol(Y)
     if (is.null(group))
@@ -286,10 +286,10 @@ summary.stabsel <- function(st, cutoff = 0.85, map, mrk2lg){
 #'matplot(mod$lambda ,t(mod$beta),type='l',col=colors)
 #' @export
 grpLassoQTL <- function(X, Y, map,
-                        PFER=1, B=500, cutoff=0.85,  nb.cores, sep ="\\.", mrk2lg, type_group="both"){
+                        PFER=1, B=500, cutoff=0.85,  nb.cores, sep ="\\.", mrk2lg, type_group="both", verbose = FALSE){
   Y   <- as.matrix(Y)
   if (is.null(colnames(Y))) colnames(Y) <- paste0('Y', 1:ncol(Y))
-  st  <- gglasso_st_tot(X, Y, group = NULL, sep = sep, nb.cores = nb.cores, B = B, PFER = PFER, type_group = type_group)
+  st  <- gglasso_st_tot(X, Y, group = NULL, sep = sep, nb.cores = nb.cores, B = B, PFER = PFER, type_group = type_group, verbose = verbose)
   summary(st, cutoff = cutoff, map, mrk2lg)
 }
 
