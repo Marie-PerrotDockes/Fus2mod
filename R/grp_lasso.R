@@ -285,10 +285,11 @@ summary.stabsel <- function(st, cutoff = 0.85, map, mrk2lg){
 #'colors <- c(rep("grey",2), rep('green',2),rep('black', 6), rep(c("orange","blue"), 2), 'darkgreen', rep('yellow',3), rep('purple',2))
 #'matplot(mod$lambda ,t(mod$beta),type='l',col=colors)
 #' @export
-grpLassoQTL <- function(X, Y, marker, map,
+grpLassoQTL <- function(X, Y, map,
                         PFER=1, B=500, cutoff=0.85,  nb.cores, sep ="\\.", mrk2lg, type_group="both"){
   Y   <- as.matrix(Y)
-  st  <- gglasso_st_tot(X, Y, group = NULL, sep = sep, nb.cores = nb.cores, B = 500, PFER = PFER, type_group = type_group)
+  if (is.null(colnames(Y))) colnames(Y) <- paste0('Y', 1:ncol(Y))
+  st  <- gglasso_st_tot(X, Y, group = NULL, sep = sep, nb.cores = nb.cores, B = B, PFER = PFER, type_group = type_group)
   summary(st, cutoff = cutoff, map, mrk2lg)
 }
 
