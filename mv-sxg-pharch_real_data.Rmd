@@ -1,0 +1,342 @@
+---
+title: "Loop for simulation"
+author: "Charlotte Brault"
+date: "`r format(Sys.time(), '%d/%m/%Y %H:%M:%S')`"
+colorlinks: true
+output:
+  html_document:
+    toc: true
+    toc_depth: 5
+    toc_float: true
+    number_sections: TRUE
+  pdf_document:
+    toc: true
+    toc_depth: 5
+    number_sections: TRUE
+urlcolor: blue
+---
+```{r setup, include=FALSE}
+R.v.maj <- as.numeric(R.version$major)
+R.v.min.1 <- as.numeric(strsplit(R.version$minor, "\\.")[[1]][1])
+if(R.v.maj < 2 || (R.v.maj == 2 && R.v.min.1 < 15))
+  stop("requires R >= 2.15", call.=FALSE)
+
+suppressPackageStartupMessages(library(knitr))
+opts_chunk$set(echo=TRUE, warning=TRUE, message=TRUE, cache=FALSE, fig.align="center")
+```
+
+
+# Overview
+
+Importantly, before anything else, one must specify all paths relatively to the root of the project:
+```{r project_organization}
+project.name <- "mv-sxg-pharch"
+project.dir <- "~/mv-sxg-pharch"
+if(Sys.info()["user"] == "tflutre"){
+  project.dir <- paste0("~/work/", project.name)
+} else if(Sys.info()["user"] == "flutre"){
+  project.dir <- paste0("/work/", project.name)
+} else if(Sys.info()["user"] == "jchiquet"){
+  project.dir <- paste0("~/git/", project.name)
+} else if(Sys.info()["user"] == "braultch"){
+  project.dir <- paste0("C:/Users/braultch/work/", project.name)
+} else if(Sys.info()["user"] == "brault"){
+  project.dir <- paste0("~/work/", project.name)
+} else if(Sys.info()["user"] == "perrot-dockes"){
+  project.dir <- paste0("/home/perrot-dockes/Documents/Multivar_selec/Multivar_selec/FusedLasso/Charlotte/", project.name)
+}
+stopifnot(file.exists(project.dir))
+data.dir <- paste0(project.dir, "/data")
+stopifnot(file.exists(data.dir))
+results.dir <- paste0(project.dir, "/results")
+stopifnot(file.exists(results.dir))
+```
+
+This document will also require external packages to be available, for instance:
+```{r load_pkg}
+suppressPackageStartupMessages(library(beanplot))
+suppressPackageStartupMessages(library(qtl))
+suppressPackageStartupMessages(library(parallel))
+suppressPackageStartupMessages(library(pbmcapply))
+suppressPackageStartupMessages(library(glmnet))
+suppressPackageStartupMessages(library(ggplot2))
+suppressPackageStartupMessages(library(stabs))
+suppressPackageStartupMessages(library(Fus2mod))
+suppressPackageStartupMessages(library(lars))
+suppressPackageStartupMessages(library(spring))
+nb.cores <- detectCores() - 1
+if(Sys.info()["sysname"] == "Windows")
+  nb.cores <- 1
+if(nb.cores > 20){
+  nb.cores <- 20
+}
+suppressPackageStartupMessages(library(rutilstimflutre))
+source(file = paste0(project.dir,"/src/Function4GenoClass.R"))
+ source(paste0(project.dir,'/src/grp_lasso.R'))
+```
+
+This R chunk is used to assess how much time it takes to execute the R code in this document until the end:
+```{r time_0}
+t0 <- proc.time()
+```
+
+We are trying to define which method is the best for multivariate QTL detection based in simulated data.
+For more details, see the Rmd `mv-sxg-pharch_comparison-QTL-detection`
+
+
+
+# Marker genotypes
+
+## As genotypic class
+
+From Doligez et al (2013), these data are used to perform QTL analysis through simple tests.
+Contains SSR genotypes (`.loc`), genetic map (`.map`) and some quantitative phenotypes (`qua`, not used in this project) in the [JoinMap](https://www.kyazma.nl/index.php/mc.JoinMap/) format, readable by the `qtl` package.
+
+This file is used for the univariate QTL detection.
+
+```{r read_cross}
+dat.doligez2013 <- read.cross(format = "mapqtl", dir=data.dir,
+                              genfile="SxG_Doligez-et-al-2013.loc",
+                              mapfile = "SxG_Doligez-et-al-2013.map",
+                              phefile="SxG_Doligez-et-al-2013.qua")
+```
+
+Get genotypic classes of all markers as a data frame:
+
+```{r results="hide"}
+p2f <- paste0(data.dir, "/SxG_Doligez-et-al-2013.loc")
+dim(gclasses <- read.table(p2f, skip=5))
+rownames(gclasses) <- gclasses[,1]
+gclasses <- gclasses[,-1]
+colnames(gclasses) <- c("seg", "phase", as.character(dat.doligez2013$pheno$indiv))
+
+tmp = data.frame(locus=rownames(gclasses),
+                 seg=gclasses$seg,
+                 phase=gclasses$phase,
+                 clas=NA)
+tmp = cbind(tmp, gclasses[, -c(1:2)])
+tmp = updateJoinMap(tmp)
+gclasses = tmp[, -c(1,4)]
+clgeno = gclasses
+```
+
+
+Construct the genetic map, for each chromosome list the marker and its position in gmap (list)
+
+```{r read_genetic_map}
+map <- read.table(paste0(data.dir,
+                         "/SxG_Doligez-et-al-2013.map"),
+                  stringsAsFactors=FALSE)
+tmp <- map
+link.groups <- as.character(tmp[,2][tmp[,1] == "group"])
+gmap <- list()
+for(link.group in link.groups[1:(length(link.groups) - 1)]){
+  idx.start <- which(tmp[,2] == link.group) + 1
+  idx.end <- which(tmp[,1] == "group" &
+                   tmp[,2] != link.group)[1] - 1
+  gmap[[link.group]] <- setNames(as.numeric(tmp[idx.start:idx.end, 2]),
+                                 tmp[idx.start:idx.end, 1])
+  tmp <- tmp[-((idx.start-1):idx.end),]
+}
+link.group <- tail(link.groups, 1)
+gmap[[link.group]] <- setNames(as.numeric(tmp[2:nrow(tmp), 2]),
+                               tmp[2:nrow(tmp), 1])
+```
+
+
+Get the linkage groups from the marker names, thus it is possible to identify the linkage group of each marker.
+
+```{r get_lg}
+mrk.names <- do.call(c, lapply(gmap, names))
+rep.lg.names <- do.call(c, lapply(names(gmap), function(lg.name){
+  rep(lg.name, length(gmap[[lg.name]]))
+}))
+mrk2lg <- setNames(rep.lg.names, mrk.names)
+```
+
+
+## Design matrix of marker genotypes
+
+For this, `mv-sxg-pharch_reformat-genos.Rmd` must have been executed beforehand.
+
+```{r read_X_genos}
+X <- as.matrix(read.table(paste0(results.dir,
+                                 "/SxG_Doligez2013_genos-design-mat.tsv"),sep="\t"))
+X <- X[,-1] #remove intercept
+dim(X)
+X[1:3, 1:5]
+stopifnot(! any(is.na(X)))
+```
+
+
+
+## Genetic map to data frame
+
+The function `spring` is taking as genetic map a data frame with a column chrom containing the chromosome, a column loci with genetic distance and names with marker names.
+
+We have to transform the file gmap to a data frame in the right configuration.
+
+
+```{r gmap2df}
+gmapdf <- data.frame(chrom=0, loci=0, names=mrk.names)
+for (i in 1:nrow(gmapdf)){
+  gmapdf$chrom[i] <- substr(rownames(gmapdf)[i], start=2, stop=3)
+  idx <- which(map$V1 == gmapdf$names[i])
+  gmapdf$loci[i] = map$V2[idx]
+}
+rownames(gmapdf) <- NULL
+```
+
+# Load phenotypes
+
+Phenotypes are coming from the work of Aude Coupel Ledru, for more details, see her article in 2014 and 2016.
+
+
+Traits are taken under 2 conditions and 2 years 
+
+In Coupel Ledru et al, there is a QTL for the trait KS in years 12+13 for the WW scenario in the linkage group 2 near the marker VVIB01
+
+```{r load_pheno}
+blups = read.table(file=paste0(results.dir,"/SxG_CoupelLedru2014_all-blups.tsv"), header=TRUE, sep="\t", dec='.')
+head(blups)
+trait <- "KS"
+year <- "12+13"
+scenario <- c("WW","WD")
+
+# here year is fixed so the multivariate aspect is coming from the condition
+Condition1 = blups[which(blups$trait == trait & blups$year == year & 
+                  blups$scenario == scenario[1]),"blup"]
+
+Condition2 = blups[which(blups$trait == trait & blups$year == year & 
+                  blups$scenario == scenario[2]),"blup"]
+
+Y = cbind(Condition1,Condition2)
+
+rownames(Y) <- blups[which(blups$trait == trait & 
+                              blups$year == year & 
+                              blups$scenario == scenario[1]),"geno"]
+head(Y)
+
+marker <- "VVIB01"
+```
+
+
+# Marker selection
+
+```{r loop}
+res_G <- 0
+res_Fus <- 0 
+res_Spring <- 0
+U1 <- data.frame(chromosome=0, position=0, LOD=0, idx=0) 
+U2 <- data.frame(chromosome=0, position=0, LOD=0, idx=0)
+
+### Plot data
+setd1 = c(setdiff(colnames(clgeno),rownames(Y)))
+setd2 = c(setdiff(rownames(Y),colnames(clgeno)))
+setd3 = c(setdiff(rownames(Y),rownames(X)))
+setd4 = c(setdiff(rownames(X),rownames(Y)))
+
+clgeno = clgeno[, !(names(clgeno) %in% setd1)]
+Y = Y[ ! (rownames(Y) %in% setd2),]
+Y = Y[ ! (rownames(Y) %in% setd3),]
+X = X[ ! (rownames(X) %in% setd4),]
+(dim(X))
+(dim(Y))
+
+clgeno[clgeno == '--'] <- NA
+clgeno.marker = as.matrix(clgeno[rownames(clgeno) == marker,])
+ylim = c(-2,2)
+
+par(mfrow = c(1,2))
+ 
+beanplot(Y[,"Condition1"] ~ t(clgeno.marker), ylim=ylim, xlab = "genotypic class", 
+       ylab="Simulated response", main = "Response 1",las=1, log="", bw="nrd0", 
+       what=c(1,1,1,0), col=c("grey",0,0,"red"), border=NA)
+
+beanplot(Y[,"Condition2"] ~ t(clgeno.marker), ylim=ylim, xlab="genotypic class", 
+       ylab="Simulated response", main="Response 2",las=1, log="", bw="nrd0", 
+       what=c(1,1,1,0), col=c("grey",0,0,"red"), border=NA)
+
+par(mfrow = c(1,1))
+
+## Univariate QTL detection
+  ### Response 1
+U.resp1 = univQTL(dat.doligez2013, response=subset(Y,select="Condition1"), 
+              nperm=100, method ="ehk", plot=TRUE, ylim=c(0,15),
+             main = paste0(trait,"-", year, " - WW"))
+if(nrow(U.resp1) == 0) {
+    U1 = 0
+    
+  } else if (nrow(U.resp1) != 0) {
+  U1 = U.resp1
+  }
+  
+### Response 2
+U.resp2=univQTL(dat.doligez2013, response=subset(Y,select="Condition2"),
+          nperm=100, method ="ehk", plot=TRUE, ylim=c(0,15), 
+           main = paste0(trait,"-", year, " - WD"))
+
+if(nrow(U.resp2) == 0){
+    U2 = 0
+
+    
+    }else if(nrow(U.resp2) != 0){
+    U2 = U.resp2
+}
+U1
+U2
+
+## Glmnet
+G = glmnetmultivarQTL(X=X, Y=Y, map=map, choose.alpha=0.1, 
+                  PFER=1, B=500, cutoff=0.95, plot=TRUE, nb.cores=nb.cores)
+res_G = G
+
+## Fus2mod
+# group = c("WW","WD")
+# Y <- as.data.frame(Y)
+# Fu=fus2modQTL(X=X,Y=Y, map=map, group=group, 
+#               nrep=c(2,10), plot=c(FALSE,TRUE), cutoff=0.95, lambda=NULL, nb.cores=nb.cores)
+#   
+# res_Fus = Fu[[1]]
+# (print(Fu[[2]]))
+#   
+## Spring
+Sp = springQTL(X=X, Y=Y, map=map, gmapdf=gmapdf, group=group,
+                 plot=c(FALSE),lambda2=c(10^seq(2,-2,len=6)),nb.cores)
+res_Spring <- Sp
+
+Sp
+## Group lasso
+Glb <- grpLassoQTL(X, Y, marker, map,
+                        PFER=1, B=500, cutoff=0.85, plot=TRUE, nb.cores, sep ="\\.",  mrk2lg, type_group="both")
+   
+res_Glb<- rbind(res_Glb, Glb)
+Glb$idx <- i
+
+Glb
+  
+    Glt <- grpLassoQTL(X, Y, marker, map,
+                        PFER=1, B=500, cutoff=0.85, plot=TRUE, nb.cores, sep ="\\.", mrk2lg, type_group="Trait")
+
+Glt$idx <- i
+      res_Glt <- rbind(res_Glt, Glt)
+
+        Glt
+
+```
+
+
+# Appendix
+
+
+```{r info}
+format(Sys.time(), '%d/%m/%Y %H:%M:%S')
+t1 <- proc.time(); t1 - t0
+print(sessionInfo(), locale=FALSE)
+```
+
+
+
+
+
+
