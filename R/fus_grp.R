@@ -53,16 +53,15 @@ group_fl2_adaptive <- function(response, regressors, group, group_by =NULL, uniq
 
   }
   ord <- order(grp)
-  print(grp[order(grp)])
   nb <- (max(grp) - 1) / 3
 
   # grp <- c(1,1,group, group + nb, group + 2 * nb)
   b <- (3 * nb - a * nb + 2) / (2 * nb )
-  bOLSr <- lm.ridge(y~X2[,ord] -1, lambda = 0.1)$coef
+  bOLSr <- lm.ridge(response ~ X2[,ord] -1, lambda = 0.1)$coef
   bOLSgr <- tapply(bOLSr,grp[ord],function(x){sqrt(sum(x^2))})
 
   mod <- gglasso(x = X2[,ord], group= grp[ord], loss = 'ls', y = response,
-                 pf = c(0, rep(b, 2 * nb), rep(a, nb)) / bOLSgr ,
+                 pf = n * c(0, rep(b, 2 * nb), rep(a, nb)) / bOLSgr ,
                  intercept = F, lambda = lambda, nlambda = nlambda)
   return(list(mod= mod,grp=  grp,ord = ord, Est = X2[,ord] %*% mod$beta,
               grp_ord=grp[ord],bOLSgr=bOLSgr))

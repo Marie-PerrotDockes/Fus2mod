@@ -43,7 +43,7 @@
 # }
 
 
-cv_fl2_fixa <- function(response, regressors, group, a,
+stab.fl2_fixa <- function(response, regressors, group, a,
          lambda = NULL,  nrep= 1000,
          nb.cores = 3, plot = TRUE){
   p <- ncol(regressors)
@@ -55,6 +55,31 @@ cv_fl2_fixa <- function(response, regressors, group, a,
                    penalty.factor = c(0, 0, rep(b, (ncol(X) - 2)), rep(a, ncol(regressors))),
                    intercept = F, lambda = lambda)
 
+  coef <- coef(mod, s='lambda.1se')[-1]
+  names(coef) <- colnames(X2)
+  select <- rep (TRUE, ncol(X2))
+  names(select) <- colnames(X2)
+  for(x in colnames(regressors)){
+    if( coef[x] == 0){
+      select[x] <- FALSE
+    }else{
+      if( all(coef[grepl(paste0(':',x,'$'),names(coef))] ==0)) {
+        select[grepl(paste0(':',x,'$'),names(select)) ] <- FALSE
+      } else{
+        select[grepl(paste0(':',x,'$'),names(select)) &
+                 coef[grepl(paste0(':',x,'$'),names(coef))] ==0 ] <- FALSE
+      }
+    }
+
+  }
+  X3 <- X2[, select]
+
+
+  # q <- max(5, min(2 * round(nrow(X3)/log(ncol(X3)/10)*10) - 1 , ncol(X3)))
+  q <- max(5, min(2 * round(nrow(X3)/log(ncol(X3))/10)*10, ncol(X3) -5 ))
+  mod <- stabsel(X3, y, q=q, PFER=1, B = nrep,
+                 fitfun = glmnet.lasso,
+                 args.fitfun = list(standardize=FALSE, intercept = FALSE, penalty.factor = c(0,0, rep(1, (ncol(X3)-2)))), mc.cores = nb.cores, mc.preschedule = TRUE)
 
   return(mod)
 }
