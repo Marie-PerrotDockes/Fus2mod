@@ -2,7 +2,7 @@
 % Please edit documentation in R/cvfl2.R
 \name{cv.fl2}
 \alias{cv.fl2}
-\title{Description of the function}
+\title{Fuse lasso}
 \usage{
 cv.fl2(response, regressors, group, seq.a = NULL, lambda = NULL,
   mina = 0.1, nfold = 5, nrep = 10, nb.cores = 3, plot = TRUE)
@@ -26,7 +26,7 @@ cv.fl2(response, regressors, group, seq.a = NULL, lambda = NULL,
 The ddl and the error of the lambda that minimise the CV error for differents value of a (we take the mean over nrep  replicats)
 }
 \description{
-Description of the function
+Cross-validation to find a (and optionally lambda).
 }
 \examples{
 B <- c(1, -1, 1.5, 1.5, rep(0, 6), 2, 0, 2, 0)
@@ -36,4 +36,7 @@ X  <- model.matrix(~group + group:regressors - 1)
 y <- X\%*\%B + rnorm(20)
 y <- scale(y)
 mod <- cv.fl2(y, regressors, group)
+}
+\seealso{
+\code{\link{cv_fl2_fixa}}
 }
