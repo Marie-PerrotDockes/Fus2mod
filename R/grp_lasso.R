@@ -172,7 +172,7 @@ gglasso_forstab <- function (x, y, group, ord, q)
 #'
 #' @export
 gglasso_st_tot <- function(X,Y, group = NULL, sep ="\\.", nb.cores = 7, B = 500, PFER = 1, type_group, verbose = FALSE){
-  if (type_group == "Trait") {
+  if (type_group == "trait") {
     X <- as.matrix(X)
     Y <- as.matrix(Y)
     q <- max(5, min(2 * round(nrow(X)/log(ncol(X))/10)*10, ncol(X)))
