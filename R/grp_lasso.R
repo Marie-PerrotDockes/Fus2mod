@@ -240,7 +240,7 @@ summary.stabsel <- function(st, cutoff = 0.85, map, mrk2lg){
 
     mp <- suppressWarnings( as.numeric(map[,2]))
     names(mp) <- map$V1
-    cbind.data.frame(trait, marker, allele, linkage_group = mrk2lg[marker], position =mp[marker] , Probability = st$max[select], idx = 0)
+    cbind.data.frame(trait, marker, allele, linkage_group = mrk2lg[marker], position =mp[marker] , probability = st$max[select], idx = 0)
     } else {
       cbind.data.frame(trait = 0, marker = 0, allele = 0, linkage_group = 0, position =0 , probability = 0, idx = 0)
 
