@@ -51,7 +51,7 @@ stab.fl2_fixa <- function(response, regressors, group, a,
 
  # q <- max(5, min(2 * round(nrow(X3)/log(ncol(X3)/10)*10) - 1 , ncol(X3)))
   q <- max(5, min(2 * round(nrow(X3)/log(ncol(X3))/10)*10, ncol(X3) -5 ))
-   mod <- stabsel(X3, y, q=q, PFER=1, B = nrep,
+   mod <- stabsel(X3, y=response, q=q, PFER=1, B = nrep,
                  fitfun = glmnet.lasso,
                  args.fitfun = list(standardize=FALSE, intercept = FALSE, penalty.factor = c(0,0, rep(1, (ncol(X3)-2)))), mc.cores = nb.cores, mc.preschedule = TRUE)
 
