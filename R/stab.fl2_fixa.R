@@ -1,11 +1,13 @@
-#' Description of the function
+#' Stability selection for fuse lasso
 #'
+#' Cross-validation for lambda followed by stability selection, a being known.
 #' @param  response a vector response variable
 #' @param  regressors a quantitative matrix of regressor
 #' @param  group a vector with two levels. (The group of the ANCOVA)
 #' @param  a the parameters that indicate how much the coefficients will be fused
 #' @param  lambda if the user wants to use it owns values of lambdas
 #' @return The coefficients of the fused lasso ANCOVA for the different value of lambda
+#' @seealso \code{\link{cv.fl2}}, \code{\link{cv_fl2_fixa}}
 #' @examples
 #' B <- c(1, -1, 1.5, 1.5, rep(0, 6), 2, 0, 2, 0)
 #'group <- c(rep('M1', 10), rep('M2', 10))

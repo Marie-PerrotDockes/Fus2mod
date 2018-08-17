@@ -1,5 +1,6 @@
-#' Description of the function
+#' Fuse lasso
 #'
+#' Cross-validation to find a (and optionally lambda).
 #' @param  response a vector response variable
 #' @param  regressors a quantitative matrix of regressor
 #' @param  group a vector with two levels. (The group of the ANCOVA)
@@ -8,6 +9,7 @@
 #' @param  mina if seq.a is NULL the minimum value of a that is use in seq.a ( a must be higher than 0.)
 #' @param  nrep the number of times we perform each CV for the different value of a in seq.a
 #' @return The ddl and the error of the lambda that minimise the CV error for differents value of a (we take the mean over nrep  replicats)
+#' @seealso \code{\link{cv_fl2_fixa}}
 #' @examples
 #' B <- c(1, -1, 1.5, 1.5, rep(0, 6), 2, 0, 2, 0)
 #'group <- c(rep('M1', 10), rep('M2', 10))

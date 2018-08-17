@@ -2,7 +2,7 @@
 % Please edit documentation in R/cvfl2_fixa.R
 \name{cv_fl2_fixa}
 \alias{cv_fl2_fixa}
-\title{Description of the function}
+\title{Fuse lasso}
 \usage{
 cv_fl2_fixa(response, regressors, group, a, lambda = NULL, nrep = 1000,
   nb.cores = 3, plot = TRUE)
@@ -22,7 +22,7 @@ cv_fl2_fixa(response, regressors, group, a, lambda = NULL, nrep = 1000,
 The coefficients of the fused lasso ANCOVA for the different value of lambda
 }
 \description{
-Description of the function
+Cross-validation to find lambda, a being known.
 }
 \examples{
 B <- c(1, -1, 1.5, 1.5, rep(0, 6), 2, 0, 2, 0)
@@ -34,4 +34,7 @@ y <- scale(y)
 mod1 <- bic.fl2(y, regressors, group)
 mod <- cv_fl2_fixa(y, regressors, group, a = mod1[[3]])
 coef(mod, s='lambda.min')
+}
+\seealso{
+\code{\link{cv.fl2}}
 }
